@@ -12,7 +12,7 @@ import Navbar from '@/components/Navbar';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import dynamic from 'next/dynamic';
 
-// Lazy load framer-motion dan html2pdf supaya tidak error di server
+// Dynamic import for client-side only libraries
 const motion = dynamic(() => import('framer-motion').then(mod => mod.motion), { ssr: false });
 const html2pdf = dynamic(() => import('html2pdf.js'), { ssr: false });
 
@@ -26,45 +26,58 @@ export default function Laporan() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const qMasuk = query(collection(db, 'barang_masuk'), orderBy('tanggal', 'desc'));
-      const qKeluar = query(collection(db, 'barang_keluar'), orderBy('tanggal', 'desc'));
-      const masukSnap = await getDocs(qMasuk);
-      const keluarSnap = await getDocs(qKeluar);
-      const produkSnap = await getDocs(collection(db, 'stokBarang'));
-      const supplierSnap = await getDocs(collection(db, 'supplier'));
+      try {
+        const qMasuk = query(collection(db, 'barang_masuk'), orderBy('tanggal', 'desc'));
+        const qKeluar = query(collection(db, 'barang_keluar'), orderBy('tanggal', 'desc'));
+        const masukSnap = await getDocs(qMasuk);
+        const keluarSnap = await getDocs(qKeluar);
+        const produkSnap = await getDocs(collection(db, 'stokBarang'));
+        const supplierSnap = await getDocs(collection(db, 'supplier'));
 
-      setBarangMasuk(masukSnap.docs.map((doc) => ({ id: doc.id, ...doc.data(), tanggal: doc.data().tanggal?.toDate() })));
-      setBarangKeluar(keluarSnap.docs.map((doc) => ({ id: doc.id, ...doc.data(), tanggal: doc.data().tanggal?.toDate() })));
-      setProduk(produkSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-      setSupplier(supplierSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+        setBarangMasuk(masukSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          tanggal: doc.data().tanggal?.toDate(),
+        })));
+
+        setBarangKeluar(keluarSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          tanggal: doc.data().tanggal?.toDate(),
+        })));
+
+        setProduk(produkSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setSupplier(supplierSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (error) {
+        console.error("Gagal mengambil data:", error);
+      }
     };
 
     fetchData();
   }, []);
 
-  const getNamaProduk = (id) => produk.find((p) => p.id === id)?.nama || '-';
-  const getNamaSupplier = (id) => supplier.find((s) => s.id === id)?.nama || '-';
+  const getNamaProduk = (id) => produk.find(p => p.id === id)?.nama || '-';
+  const getNamaSupplier = (id) => supplier.find(s => s.id === id)?.nama || '-';
 
   const filterByDate = (data) => {
     if (!filterDate) return data;
-    return data.filter((item) =>
+    return data.filter(item =>
       item.tanggal?.toISOString().startsWith(filterDate)
     );
   };
 
   const handleExportPDF = () => {
-    import('html2pdf.js').then((module) => {
-      const element = printRef.current;
-      const opt = {
-        margin: 0.5,
-        filename: `Laporan-Barang-${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-      };
+    if (!printRef.current || typeof window === 'undefined') return;
 
-      module.default().set(opt).from(element).save();
-    });
+    const opt = {
+      margin: 0.5,
+      filename: `Laporan-Barang-${new Date().toISOString().split('T')[0]}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+    };
+
+    html2pdf().set(opt).from(printRef.current).save();
   };
 
   return (
@@ -73,7 +86,6 @@ export default function Laporan() {
       <div className="p-6 min-h-screen bg-gradient-to-br from-[#FFF8F0] to-[#FAEDCD] text-[#344E41]">
         <h1 className="text-3xl font-bold mb-6">Laporan Barang Masuk & Keluar</h1>
 
-        {/* Filter & Tombol Export PDF */}
         <motion.div
           className="mb-6 flex flex-wrap items-center gap-4 bg-white/80 p-4 rounded-xl border border-[#DAD7CD] shadow no-print"
           initial={{ opacity: 0 }}
@@ -100,7 +112,6 @@ export default function Laporan() {
           </button>
         </motion.div>
 
-        {/* Bagian Export */}
         <div ref={printRef} className="space-y-10">
           {/* Barang Masuk */}
           <div>
