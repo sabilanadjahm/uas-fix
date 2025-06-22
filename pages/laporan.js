@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import {
@@ -7,8 +9,12 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import Navbar from '@/components/Navbar';
-import ProtectedRoute from '@/components/ProtectedRoute';import { motion } from 'framer-motion';
-import html2pdf from 'html2pdf.js';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import dynamic from 'next/dynamic';
+
+// Lazy load framer-motion dan html2pdf supaya tidak error di server
+const motion = dynamic(() => import('framer-motion').then(mod => mod.motion), { ssr: false });
+const html2pdf = dynamic(() => import('html2pdf.js'), { ssr: false });
 
 export default function Laporan() {
   const [barangMasuk, setBarangMasuk] = useState([]);
@@ -47,16 +53,18 @@ export default function Laporan() {
   };
 
   const handleExportPDF = () => {
-    const element = printRef.current;
-    const opt = {
-      margin:       0.5,
-      filename:     `Laporan-Barang-${new Date().toISOString().split('T')[0]}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2 },
-      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-    };
+    import('html2pdf.js').then((module) => {
+      const element = printRef.current;
+      const opt = {
+        margin: 0.5,
+        filename: `Laporan-Barang-${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
 
-    html2pdf().set(opt).from(element).save();
+      module.default().set(opt).from(element).save();
+    });
   };
 
   return (
