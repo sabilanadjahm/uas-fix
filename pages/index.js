@@ -18,10 +18,13 @@ export default function LoginPage() {
   const [nama, setNama] = useState('');
   const [role, setRole] = useState('admin');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setSuccessMessage('');
     try {
       if (isLogin) {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -46,7 +49,7 @@ export default function LoginPage() {
         setPassword('');
         setNama('');
         setIsLogin(true);
-        alert('Registrasi berhasil! Silakan login 💖');
+        setSuccessMessage('Registrasi berhasil! Silakan login 💖');
       }
     } catch (err) {
       console.error(err);
@@ -64,10 +67,18 @@ export default function LoginPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-4xl font-bold text-center mb-2">🍰 {isLogin ? 'Selamat Datang!' : 'Buat Akun Baru'}</h1>
-            <p className="text-sm text-center text-[#A98467] mb-6">
+            <h1 className="text-4xl font-bold text-center mb-2">
+              🍰 {isLogin ? 'Selamat Datang!' : 'Buat Akun Baru'}
+            </h1>
+            <p className="text-sm text-center text-[#A98467] mb-2">
               {isLogin ? 'Yuk masuk dulu ke dapur kue~ 💕' : 'Ayo gabung ke tim dapur kita! 🧁'}
             </p>
+
+            {successMessage && (
+              <p className="text-green-700 bg-green-100 p-2 rounded mb-4 text-center text-sm">
+                ✅ {successMessage}
+              </p>
+            )}
 
             {error && (
               <p className="text-red-600 bg-red-100 p-2 rounded mb-4 text-center text-sm">
@@ -122,7 +133,11 @@ export default function LoginPage() {
 
             <div className="text-center mt-4">
               <button
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setSuccessMessage('');
+                  setError('');
+                }}
                 className="text-sm text-[#6B4226] underline hover:text-[#f4978e] transition"
               >
                 {isLogin ? 'Belum punya akun? Yuk daftar dulu 🍓' : 'Sudah punya akun? Login di sini 💌'}
