@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation"; // Ganti dari next/router ke navigation
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
@@ -12,7 +12,7 @@ export default function ProtectedRoute({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
-        router.replace("/"); // Redirect ke login kalau belum login
+        router.replace("/"); // Redirect ke login
       }
       setLoading(false);
     });
