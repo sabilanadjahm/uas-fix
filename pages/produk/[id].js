@@ -4,7 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Barcode from 'react-barcode';
 import Navbar from '@/components/Navbar';
-import ProtectedRoute from '../middleware';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function DetailProduk() {
   const router = useRouter();
